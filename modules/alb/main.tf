@@ -1,0 +1,62 @@
+resource "aws_lb" "this" {
+  load_balancer_type = "application"
+  security_groups = [aws_security_group.this.id]
+  subnets            = var.subnet_ids
+}
+
+resource "aws_lb_listener" "http" {
+  load_balancer_arn = aws_lb.this.arn
+  port              = "80"
+  protocol          = "HTTP"
+
+  default_action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.this.arn
+  }
+}
+
+resource "aws_lb_target_group" "this" {
+  port     = 80
+  protocol = "HTTP"
+  vpc_id   = data.aws_subnet.this.vpc_id
+}
+
+resource "aws_lb_target_group_attachment" "this" {
+  target_group_arn = aws_lb_target_group.this.arn
+  target_id        = var.instance_id
+}
+
+resource "random_id" "this" {
+  byte_length = 8
+}
+
+data "aws_subnet" "this" {
+  id = var.subnet_ids[0]
+}
+
+resource "aws_security_group" "this" {
+  vpc_id = data.aws_subnet.this.vpc_id
+  name = "udemy-terraform-alb-sg-${random_id.this.hex}"
+} 
+
+resource "aws_vpc_security_group_ingress_rule" "http" {
+  security_group_id = aws_security_group.this.id
+  cidr_ipv4         = "0.0.0.0/0"
+  from_port         = 80
+  to_port           = 80
+  ip_protocol       = "tcp"
+}
+
+resource "aws_vpc_security_group_egress_rule" "all" {
+  security_group_id = aws_security_group.this.id
+  cidr_ipv4         = "0.0.0.0/0"
+  ip_protocol       = "-1"
+}
+
+resource "aws_vpc_security_group_ingress_rule" "alb_to_instance" {
+  security_group_id = var.instance_security_group_id
+  referenced_security_group_id = aws_security_group.this.id
+  from_port         = 80
+  to_port           = 80
+  ip_protocol       = "tcp"
+}
