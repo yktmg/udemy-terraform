@@ -4,7 +4,7 @@ UdemyのTerraformハンズオン講座で作成したAWSインフラのIaCコー
 
 ## 構成図
 
-![architecture](docs/aws_architecture_ltr.svg)
+![architecture](docs/architecture.png)
 
 ## ディレクトリ構成
 
